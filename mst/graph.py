@@ -20,6 +20,7 @@ class Graph:
         else: 
             raise TypeError('Input must be a valid path or an adjacency matrix')
         self.mst = None
+        self.V=len(self.adj_mat)
 
     def _load_adjacency_matrix_from_csv(self, path: str) -> np.ndarray:
         with open(path) as f:
@@ -41,4 +42,51 @@ class Graph:
         `heapify`, `heappop`, and `heappush` functions.
 
         """
-        self.mst = None
+        
+        key = [float('inf')] * self.V   # key value to pick min edge weight
+        parent = [None] * self.V
+        key[0] = 0                      # first vertex
+        mstSet = [False] * self.V       # initialize empty set
+
+        parent[0] = -1
+
+        for _ in range(self.V):
+            # choose min distrance vertex
+            u = self.minKey(key, mstSet)
+
+            mstSet[u] = True
+
+            for v in range(self.V):
+                # update key if graph[u][v] < key[v]
+                if self.adj_mat[u][v] > 0 and mstSet[v] == False \
+                and key[v] > self.adj_mat[u][v]:
+                    key[v] = self.adj_mat[u][v]
+                    parent[v] = u
+
+        self.mst = self._create_mst_adjacency_matrix(parent)
+
+    def _create_mst_adjacency_matrix(self, parent: list) -> np.ndarray:
+        """
+        Generate the adjacency matrix for the MST based on the parent array.
+        """
+        adjacency_matrix = np.zeros((self.V, self.V), dtype=float)
+        for i in range(1, self.V):
+            u = parent[i]
+            v = i
+            weight = self.adj_mat[i][u]
+            adjacency_matrix[u][v] = weight
+            adjacency_matrix[v][u] = weight
+        return adjacency_matrix
+
+    def minKey(self, key, mstSet):
+        """
+        Pick the vertex with the minimum key value from the set of vertices not yet included in MST.
+        """
+        min = float('inf')
+
+        for v in range(self.V):
+            if key[v] < min and mstSet[v] == False:
+                min = key[v]
+                min_index = v
+
+        return min_index

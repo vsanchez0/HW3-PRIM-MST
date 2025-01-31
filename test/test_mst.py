@@ -2,11 +2,12 @@ import pytest
 import numpy as np
 from mst import Graph
 from sklearn.metrics import pairwise_distances
+from scipy.sparse.csgraph import connected_components
 
 
 def check_mst(adj_mat: np.ndarray, 
               mst: np.ndarray, 
-              expected_weight: int, 
+              expected_weight: float, 
               allowed_error: float = 0.0001):
     """
     
@@ -34,6 +35,13 @@ def check_mst(adj_mat: np.ndarray,
         for j in range(i+1):
             total += mst[i, j]
     assert approx_equal(total, expected_weight), 'Proposed MST has incorrect expected weight'
+
+    num_edges = np.count_nonzero(mst) // 2
+    num_vertices = adj_mat.shape[0]
+    assert num_edges == num_vertices-1, 'MST should have exactly V-1 edges'
+
+    num_components, _ = connected_components(mst, directed=False)
+    assert num_components==1, 'MST should be fully connected'
 
 
 def test_mst_small():
@@ -71,4 +79,16 @@ def test_mst_student():
     TODO: Write at least one unit test for MST construction.
     
     """
-    pass
+    adj_mat = np.array([
+        [0, 2, 0, 6, 0],
+        [2, 0, 3, 8, 5],
+        [0, 3, 0, 0, 7],
+        [6, 8, 0, 0, 9],
+        [0, 5, 7, 9, 0]
+    ])
+    expected_weight = 16  # correct MST weight for this graph
+    g = Graph(adj_mat)
+    g.construct_mst()
+    check_mst(g.adj_mat, g.mst, expected_weight)
+
+test_mst_small()
